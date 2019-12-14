@@ -1,6 +1,11 @@
 package parser
 
-import "io"
+import (
+	"errors"
+	"io"
+)
+
+var ErrParseFail = errors.New("parse fails")
 
 // Parser represents a template parser.
 type Parser interface {
