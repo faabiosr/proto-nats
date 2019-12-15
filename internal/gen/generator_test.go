@@ -25,7 +25,7 @@ func (fp *fakeParser) Parse(out io.Writer, data interface{}) error {
 }
 
 func TestGenerate(t *testing.T) {
-	g := New(&fakeParser{})
+	g := New("v0.0.0", &fakeParser{})
 
 	req := &plugin.CodeGeneratorRequest{}
 

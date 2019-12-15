@@ -14,15 +14,16 @@ import (
 )
 
 type gen struct {
-	parser parser.Parser
+	version string
+	parser  parser.Parser
 }
 
 // ErrNoFiles returns an error when wasn't files to generate.
 var ErrNoFiles = errors.New("no files to generate")
 
 // New creates an instance of generator.
-func New(parser parser.Parser) generator.Generator {
-	return &gen{parser}
+func New(version string, parser parser.Parser) generator.Generator {
+	return &gen{version, parser}
 }
 
 // Generator generates the Golang code.
@@ -54,6 +55,7 @@ func (g *gen) file(fd *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorRes
 	data := map[string]interface{}{
 		"File":    name,
 		"Package": golang.Package(fd),
+		"Version": g.version,
 	}
 
 	buf := bytes.NewBuffer(make([]byte, 0))
