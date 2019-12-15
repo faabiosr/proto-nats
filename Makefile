@@ -16,6 +16,11 @@ fmt:
 	@gofmt -s -w -l $(shell go list -f {{.Dir}} ./...)
 .PHONY: fmt
 
+# Run pkger and embed the asserts
+pack:
+	@pkger -o cmd/protoc-gen-nats
+.PHONY: pack
+
 # Run tests
 test:
 	@go test -v -race -coverprofile=./cover.text -covermode=atomic $(shell go list ./...)

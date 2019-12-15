@@ -29,6 +29,9 @@ $ make cover
 # Format all go files
 $ make fmt
 
+# Pack the template using [Pkger](https://github.com/markbates/pkger)
+$ make pack
+
 # Run tests
 $ make test
 ```
