@@ -20,8 +20,8 @@ import (
 	nats "github.com/nats-io/nats.go"
 )
 
-const ({{ range .Services }}{{ $svc := .Name }}{{ range .Method }}
-	{{ $svc }}{{ .Name }}Subject = "{{ $svc | snakecase | replace "_" "."}}.{{ .Name | lower }}"{{ end }}
+const ({{ range .Services }}{{ $svc := .Name }}{{ $px := .Options | subjectPrefix | deref }}{{ range .Method }}{{ $px := $px | empty | ternary ($svc | deref | snakecase | replace "_" ".") $px }}
+	{{ $svc }}{{ .Name }}Subject = "{{ $px }}.{{ $sx := .Options | subject | deref }}{{ $sx | empty | ternary (.Name | lower) $sx }}"{{ end }}
 {{ end }})
 {{ range .Services }}{{ $svc := .Name | deref }}{{ $rep := $svc | len | add 10 | int }}
 // {{ repeat $rep "=" }}
