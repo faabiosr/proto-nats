@@ -3,6 +3,10 @@ package template
 import (
 	"reflect"
 	"strings"
+
+	pn "github.com/faabiosr/proto-nats/proto"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
 func unexported(s string) string {
@@ -17,4 +21,16 @@ func deref(v interface{}) interface{} {
 	}
 
 	return val.Elem().Interface()
+}
+
+func subject(opts *descriptor.MethodOptions) interface{} {
+	opt, _ := proto.GetExtension(opts, pn.E_Subject)
+
+	return opt
+}
+
+func subjectPrefix(opts *descriptor.ServiceOptions) interface{} {
+	opt, _ := proto.GetExtension(opts, pn.E_SubjectPrefix)
+
+	return opt
 }

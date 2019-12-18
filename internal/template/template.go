@@ -33,9 +33,14 @@ func (t *template) Parse(w io.Writer, data interface{}) error {
 		return nil
 	}
 
+	funcs := sprig.TxtFuncMap()
+	funcs["unexported"] = unexported
+	funcs["deref"] = deref
+	funcs["subject"] = subject
+	funcs["subjectPrefix"] = subjectPrefix
+
 	tpl, err := tpl.New("proto-nats").
-		Funcs(sprig.TxtFuncMap()).
-		Funcs(tpl.FuncMap{"unexported": unexported, "deref": deref}).
+		Funcs(funcs).
 		Parse(string(content))
 
 	if err != nil {
