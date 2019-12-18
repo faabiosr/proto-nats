@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"go/format"
 
 	"github.com/faabiosr/proto-nats/generator"
 	"github.com/faabiosr/proto-nats/internal/gen/golang"
@@ -53,9 +54,10 @@ func (g *gen) file(fd *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorRes
 	name := fmt.Sprintf("%s.%s.go", golang.Name(fd.GetName()), "nats")
 
 	data := map[string]interface{}{
-		"File":    name,
-		"Package": golang.Package(fd),
-		"Version": g.version,
+		"File":     name,
+		"Package":  golang.Package(fd),
+		"Services": fd.Service,
+		"Version":  g.version,
 	}
 
 	buf := bytes.NewBuffer(make([]byte, 0))
@@ -64,9 +66,15 @@ func (g *gen) file(fd *descriptor.FileDescriptorProto) (*plugin.CodeGeneratorRes
 		return nil, err
 	}
 
+	content, err := format.Source(buf.Bytes())
+
+	if err != nil {
+		return nil, err
+	}
+
 	res := &plugin.CodeGeneratorResponse_File{
 		Name:    proto.String(name),
-		Content: proto.String(buf.String()),
+		Content: proto.String(string(content)),
 	}
 
 	return res, nil
