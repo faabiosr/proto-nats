@@ -9,3 +9,137 @@ It is generated from these files:
 	{{ .File }}
 */
 package {{ .Package }}
+
+import (
+	"context"
+	"errors"
+	"time"
+
+	pn "github.com/faabiosr/proto-nats/proto"
+	"github.com/golang/protobuf/ptypes"
+	nats "github.com/nats-io/nats.go"
+)
+
+const ({{ range .Services }}{{ $svc := .Name | snakecase | camelcase }}{{ range .Method }}
+	{{ $svc }}{{ .Name }}Subject = "{{ $svc | snakecase | replace "_" "."}}.{{ .Name | lower }}"{{ end }}
+{{ end }})
+{{ range .Services }}{{ $svc := .Name | snakecase | camelcase }}{{ $rep := $svc | len | add 10 | int }}
+// {{ repeat $rep "=" }}
+// {{ $svc }} Interface
+// {{ repeat $rep "=" }}
+type {{ $svc }} interface {
+{{ range .Method }}	{{ .Name }}(ctx context.Context, req *{{ .InputType |  splitList "." | last }}) (*{{ .OutputType | splitList "." | last }}, error)
+{{ end }}}
+{{ $rep := $svc | len | add 19 | int }}
+// {{ repeat $rep "=" }}
+// {{ .Name }} Encoded Subscriber
+// {{ repeat $rep "=" }}{{ $encSub := print $svc "EncodedSubscriber" }}
+type {{ $encSub | unexported }} struct {
+	enc       *nats.EncodedConn
+	queueName string
+	svc       {{ .Name }}
+	subs      []*nats.Subscription
+}
+
+// New{{ $encSub }} creates a {{ $encSub | unexported }} that implements the QueueSubscriber.
+func New{{ $encSub }}(enc *nats.EncodedConn, queueName string, svc {{ .Name }}) QueueSubscriber {
+	return &{{ $encSub | unexported }}{enc, queueName, svc, []*nats.Subscription{}}
+}
+
+// Subscribe will register the services in encoded queue broker.
+func (s *{{ $encSub | unexported }}) Subscribe() error {
+{{ range .Method }}	if err := s.register(s.enc.QueueSubscribe({{ $svc }}{{ .Name }}Subject, s.queueName, s.{{ .Name | lower }})); err != nil {
+		return err
+	}
+
+{{ end }}	return nil
+}
+
+// Unsubscribe will unregister the services from the encoded queue broker.
+func (s *{{ $encSub | unexported }}) Unsubscribe() error {
+	if len(s.subs) == 0 {
+		return nil
+	}
+
+	for _, sub := range s.subs {
+		if err := sub.Unsubscribe(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *{{ $encSub | unexported }}) register(sub *nats.Subscription, err error) error {
+	if err != nil {
+		return err
+	}
+
+	s.subs = append(s.subs, sub)
+
+	return nil
+}
+{{ range .Method }}
+func (s *{{ $encSub | unexported }}) {{ .Name | lower }}(subject, reply string, req *{{ .InputType | splitList "." | last }}) {
+	res, err := s.svc.{{ .Name }}(context.Background(), req)
+
+	if len(reply) == 0 {
+		return
+	}
+
+	if err != nil {
+		s.enc.Publish(reply, &pn.EncodedMessage{Error: err.Error()})
+		return
+	}
+
+	msg := &pn.EncodedMessage{}
+	msg.Body, err = ptypes.MarshalAny(res)
+
+	if err != nil {
+		msg.Error = err.Error()
+	}
+
+	s.enc.Publish(reply, msg)
+}{{ end }}
+{{ $rep := .Name | len | add 15 | int }}
+// {{ repeat $rep "=" }}
+// {{ .Name }} Encoded Client
+// {{ repeat $rep "=" }}{{ $encCli := print $svc "EncodedClient" }}
+type {{ $encCli | unexported }} struct {
+	enc     *nats.EncodedConn
+	timeout time.Duration
+}
+
+// New{{ $encCli }} creates a {{ $encCli | unexported }} thtat implements the {{ .Name }}.
+func New{{ $encCli }}(enc *nats.EncodedConn, timeout time.Duration) {{ .Name }} {
+	return &{{ $encCli | unexported }}{enc, timeout}
+}
+{{ range .Method }}
+func (c *{{ $encCli | unexported }}) {{ .Name }}(ctx context.Context, req *{{ .InputType | splitList "." | last }}) (*{{ .OutputType | splitList "." | last }}, error) {
+	var msg pn.EncodedMessage
+
+	if err := c.enc.Request({{ $svc }}{{ .Name }}Subject, req, &msg, c.timeout); err != nil {
+		return nil, err
+	}
+
+	if err := msg.GetError(); len(err) != 0 {
+		return nil, errors.New(err)
+	}
+
+	res := &{{ .OutputType | splitList "." | last }}{}
+
+	if err := ptypes.UnmarshalAny(msg.GetBody(), res); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+{{ end }}{{ end }}
+// QueueSubscriber is the interface generate to communicate with queue broker.
+type QueueSubscriber interface {
+	// Subscribe will register all the services into broker queue service.
+	Subscribe() error
+
+	// Unsubscribe will unregister all the services from the broker queue service.
+	Unsubscribe() error
+}
