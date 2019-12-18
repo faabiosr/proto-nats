@@ -3,7 +3,6 @@ package template
 import (
 	"io"
 	"io/ioutil"
-	"strings"
 	tpl "text/template"
 
 	"github.com/Masterminds/sprig"
@@ -36,7 +35,7 @@ func (t *template) Parse(w io.Writer, data interface{}) error {
 
 	tpl, err := tpl.New("proto-nats").
 		Funcs(sprig.TxtFuncMap()).
-		Funcs(tpl.FuncMap{"unexported": unexported}).
+		Funcs(tpl.FuncMap{"unexported": unexported, "deref": deref}).
 		Parse(string(content))
 
 	if err != nil {
@@ -44,8 +43,4 @@ func (t *template) Parse(w io.Writer, data interface{}) error {
 	}
 
 	return tpl.Execute(w, data)
-}
-
-func unexported(s string) string {
-	return strings.ToLower(s[:1]) + s[1:]
 }

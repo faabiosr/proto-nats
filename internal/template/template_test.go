@@ -15,12 +15,3 @@ func TestTemplateParser(t *testing.T) {
 		t.Errorf("parse fails: expected nil - got %v", err)
 	}
 }
-
-func TestUnexported(t *testing.T) {
-	s := "UserGroup"
-	expected := "userGroup"
-
-	if unexported(s) != expected {
-		t.Errorf("func fail: expected %s - got %s", expected, s)
-	}
-}
