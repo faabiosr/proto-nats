@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"fmt"
 	"io"
 	"testing"
 
@@ -19,6 +20,11 @@ func (fp *fakeParser) Parse(out io.Writer, data interface{}) error {
 
 	if pkg == "user" {
 		return parser.ErrParseFail
+	}
+
+	if pkg == "home" {
+		fmt.Fprint(out, "{")
+		return nil
 	}
 
 	return nil
@@ -48,6 +54,20 @@ func TestGenerate(t *testing.T) {
 		},
 	}
 
+	res, _ = g.Generate(req)
+
+	if total := len(res.GetFile()); total > 0 {
+		t.Errorf("generator fail: shouldn't generate files, but generate %d", total)
+	}
+
+	req.ProtoFile = []*descriptor.FileDescriptorProto{
+		&descriptor.FileDescriptorProto{
+			Name:    proto.String("user"),
+			Package: proto.String("user"),
+			Service: []*descriptor.ServiceDescriptorProto{&descriptor.ServiceDescriptorProto{}},
+		},
+	}
+
 	if _, err := g.Generate(req); err == nil {
 		t.Errorf("generate fail: expected an error - got %v", err)
 	}
@@ -56,6 +76,7 @@ func TestGenerate(t *testing.T) {
 		&descriptor.FileDescriptorProto{
 			Name:    proto.String("group"),
 			Package: proto.String("group"),
+			Service: []*descriptor.ServiceDescriptorProto{&descriptor.ServiceDescriptorProto{}},
 		},
 	}
 
@@ -63,5 +84,17 @@ func TestGenerate(t *testing.T) {
 
 	if total := len(res.GetFile()); total == 0 {
 		t.Errorf("generator fail: should generate %d instead of %d", total, 0)
+	}
+
+	req.ProtoFile = []*descriptor.FileDescriptorProto{
+		&descriptor.FileDescriptorProto{
+			Name:    proto.String("home"),
+			Package: proto.String("home"),
+			Service: []*descriptor.ServiceDescriptorProto{&descriptor.ServiceDescriptorProto{}},
+		},
+	}
+
+	if _, err := g.Generate(req); err == nil {
+		t.Errorf("generator fail: expected code formatter error, got %v", err)
 	}
 }

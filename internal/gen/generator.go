@@ -36,6 +36,10 @@ func (g *gen) Generate(req *plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorR
 	files := make([]*plugin.CodeGeneratorResponse_File, 0, len(req.GetProtoFile()))
 
 	for _, fd := range req.GetProtoFile() {
+		if len(fd.Service) == 0 {
+			continue
+		}
+
 		file, err := g.file(fd)
 
 		if err != nil {
@@ -43,7 +47,6 @@ func (g *gen) Generate(req *plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorR
 		}
 
 		files = append(files, file)
-
 	}
 
 	return &plugin.CodeGeneratorResponse{File: files}, nil
