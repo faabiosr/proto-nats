@@ -20,10 +20,10 @@ import (
 	nats "github.com/nats-io/nats.go"
 )
 
-const ({{ range .Services }}{{ $svc := .Name | snakecase | camelcase }}{{ range .Method }}
+const ({{ range .Services }}{{ $svc := .Name }}{{ range .Method }}
 	{{ $svc }}{{ .Name }}Subject = "{{ $svc | snakecase | replace "_" "."}}.{{ .Name | lower }}"{{ end }}
 {{ end }})
-{{ range .Services }}{{ $svc := .Name | snakecase | camelcase }}{{ $rep := $svc | len | add 10 | int }}
+{{ range .Services }}{{ $svc := .Name | deref }}{{ $rep := $svc | len | add 10 | int }}
 // {{ repeat $rep "=" }}
 // {{ $svc }} Interface
 // {{ repeat $rep "=" }}
@@ -33,7 +33,7 @@ type {{ $svc }} interface {
 {{ $rep := $svc | len | add 19 | int }}
 // {{ repeat $rep "=" }}
 // {{ .Name }} Encoded Subscriber
-// {{ repeat $rep "=" }}{{ $encSub := print $svc "EncodedSubscriber" }}
+// {{ repeat $rep "=" }}{{ $encSub := printf "%s%s" $svc "EncodedSubscriber" }}
 type {{ $encSub | unexported }} struct {
 	enc       *nats.EncodedConn
 	queueName string
@@ -42,7 +42,7 @@ type {{ $encSub | unexported }} struct {
 }
 
 // New{{ $encSub }} creates a {{ $encSub | unexported }} that implements the QueueSubscriber.
-func New{{ $encSub }}(enc *nats.EncodedConn, queueName string, svc {{ .Name }}) QueueSubscriber {
+func New{{ $encSub }}(enc *nats.EncodedConn, queueName string, svc {{ .Name }}) pn.QueueSubscriber {
 	return &{{ $encSub | unexported }}{enc, queueName, svc, []*nats.Subscription{}}
 }
 
@@ -104,7 +104,7 @@ func (s *{{ $encSub | unexported }}) {{ .Name | lower }}(subject, reply string, 
 {{ $rep := .Name | len | add 15 | int }}
 // {{ repeat $rep "=" }}
 // {{ .Name }} Encoded Client
-// {{ repeat $rep "=" }}{{ $encCli := print $svc "EncodedClient" }}
+// {{ repeat $rep "=" }}{{ $encCli := printf "%s%s" $svc "EncodedClient" }}
 type {{ $encCli | unexported }} struct {
 	enc     *nats.EncodedConn
 	timeout time.Duration
@@ -135,11 +135,3 @@ func (c *{{ $encCli | unexported }}) {{ .Name }}(ctx context.Context, req *{{ .I
 	return res, nil
 }
 {{ end }}{{ end }}
-// QueueSubscriber is the interface generate to communicate with queue broker.
-type QueueSubscriber interface {
-	// Subscribe will register all the services into broker queue service.
-	Subscribe() error
-
-	// Unsubscribe will unregister all the services from the broker queue service.
-	Unsubscribe() error
-}
