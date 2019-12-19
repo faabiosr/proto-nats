@@ -11,7 +11,7 @@ import (
 	"github.com/faabiosr/proto-nats/internal/template"
 )
 
-const version = "0.0.0"
+var version = "v0.0.0"
 
 func main() {
 	vFlag := flag.Bool("v", false, "print current version")
