@@ -20,6 +20,9 @@
 
 ### Makefile
 ```sh
+# Build (dev only)
+$ make build
+
 # Clean up
 $ make clean
 

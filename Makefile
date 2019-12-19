@@ -1,14 +1,19 @@
 .DEFAULT_GOAL := test
 
+# Build (dev only)
+build:
+	@CGO_ENABLE=0 go build -o ./build/protoc-gen-nats cmd/protoc-gen-nats/*.go
+.PHONY: build
+
 # Clean up
 clean:
-	@rm -fR ./cover.*
+	@rm -fR ./cover.* ./build
 .PHONY: clean
 
 # Run tests and generates html coverage file
 cover: test
-	@go tool cover -html=./cover.text -o ./cover.html
-	@test -f ./cover.text && rm ./cover.text;
+	@go tool cover -html=./coverage.text -o ./cover.html
+	@test -f ./coverage.text && rm ./coverage.text;
 .PHONY: cover
 
 # Format all go files
@@ -23,5 +28,5 @@ pack:
 
 # Run tests
 test:
-	@go test -v -race -coverprofile=./cover.text -covermode=atomic $(shell go list ./...)
+	@go test -v -race -coverprofile=./coverage.text -covermode=atomic $(shell go list ./...)
 .PHONY: test
