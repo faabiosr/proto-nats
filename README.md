@@ -9,10 +9,19 @@
 [![Powered By: GoReleaser](https://img.shields.io/badge/powered%20by-goreleaser-green.svg?style=flat-square)](https://github.com/goreleaser)
 
 
-
 ## Description
 
 `proto-nats` provides a plugin for the `protoc compiler`. It generates the client and server for working with NATS.
+
+
+## Installation
+
+Download the plugin from the [Releases](https://github.com/faabiosr/proto-nats/releases) page.
+
+### Shell script:
+```sh
+$ curl -Ls https://git.io/proto-nats | bash
+```
 
 
 ## Development
