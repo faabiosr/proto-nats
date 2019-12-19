@@ -4,7 +4,7 @@
 [![Codecov branch](https://img.shields.io/codecov/c/github/faabiosr/proto-nats/master.svg?style=flat-square)](https://codecov.io/gh/faabiosr/proto-nats)
 [![Release](https://img.shields.io/github/release/faabiosr/proto-nats.svg?style=flat-square)](https://github.com/faabiosr/proto-nats/releases/latest)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/faabiosr/proto-nats)
-[![Go Report Card](https://goreportcard.com/badge/github.com/faabiosr/proto-nats?style=flat-square)](https://goreportcard.com/report/github.com/faabiosr/proto-nats)
+[![Go Report Card](https://goreportcard.com/badge/github.com/faabiosr/proto-nats?style=flat-square&)](https://goreportcard.com/report/github.com/faabiosr/proto-nats)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://github.com/faabiosr/proto-nats/blob/master/LICENSE)
 [![Powered By: GoReleaser](https://img.shields.io/badge/powered%20by-goreleaser-green.svg?style=flat-square)](https://github.com/goreleaser)
 
