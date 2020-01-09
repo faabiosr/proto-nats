@@ -1,0 +1,18 @@
+{{ define "constants" . }}
+const ({{ range .Services }}{{ $svc := .Name }}{{ $px := .Options | subjectPrefix | deref }}{{ range .Method }}{{ $px := $px | empty | ternary ($svc | deref | snakecase | replace "_" ".") $px }}
+	{{ $svc }}{{ .Name }}Subject = "{{ $px }}.{{ $sx := .Options | subject | deref }}{{ $sx | empty | ternary (.Name | lower) $sx }}"{{ end }}
+{{ end }})
+
+const (
+{{ range .Services }}
+{{ $svc := .Name | deref }}
+{{ range .Method }}
+    {{ $svc }}{{ .Name }}Subject = "$svc"
+
+    SOMETHING = ""
+    SOMETHING = ""
+    SOMETHING = ""
+{{ end }}
+{{ end }}
+)
+{{ end }}
