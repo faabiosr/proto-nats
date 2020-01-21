@@ -20,35 +20,46 @@ import (
 	nats "github.com/nats-io/nats.go"
 )
 
-const ({{ range .Services }}{{ $svc := .Name }}{{ $px := .Options | subjectPrefix | deref }}{{ range .Method }}{{ $px := $px | empty | ternary ($svc | deref | snakecase | replace "_" ".") $px }}
-	{{ $svc }}{{ .Name }}Subject = "{{ $px }}.{{ $sx := .Options | subject | deref }}{{ $sx | empty | ternary (.Name | lower) $sx }}"{{ end }}
-{{ end }})
-{{ range .Services }}{{ $svc := .Name | deref }}{{ $rep := $svc | len | add 10 | int }}
-// {{ repeat $rep "=" }}
-// {{ $svc }} Interface
-// {{ repeat $rep "=" }}
-type {{ $svc }} interface {
-{{ range .Method }}	{{ .Name }}(ctx context.Context, req *{{ .InputType |  splitList "." | last }}) (*{{ .OutputType | splitList "." | last }}, error)
-{{ end }}}
-{{ $rep := $svc | len | add 19 | int }}
-// {{ repeat $rep "=" }}
-// {{ .Name }} Encoded Subscriber
-// {{ repeat $rep "=" }}{{ $encSub := printf "%s%s" $svc "EncodedSubscriber" }}
-type {{ $encSub | unexported }} struct {
+const (
+{{- range .Services }}
+    {{- $svcName := .Name }}
+	{{- $svcOption := .Options | subjectPrefix | deref }}
+	{{- range .Method }}
+	{{- $methodOption := .Options | subject | deref }}
+	{{- $prefixName := $svcName | deref | snakecase | replace "_" "." }}
+	{{- $sufixName := .Name | lower }}
+	{{ $svcName }}{{ .Name }}Subject = "{{ default $prefixName $svcOption }}.{{ default $sufixName $methodOption }}"
+	{{- end }}
+{{- end }}
+)
+
+{{- range .Services}}
+    {{- $svcName := .Name | deref }}
+// {{ $svcName }} Interface
+type {{ $svcName }} interface {
+    {{- range .Method }}
+	{{ .Name  }}(context.Context, *{{ .InputType | splitList "." | last }}) (*{{ .OutputType | splitList "." | last }}, error)
+	{{- end }}
+}
+
+    {{- $sub := printf "%s%s" $svcName "EncodedSubscriber" }}
+	{{- $subStruct := $sub | unexported }}
+// {{ $svcName }} Encoded Subscriber
+type {{ $subStruct }} struct {
 	enc       *nats.EncodedConn
 	queueName string
-	svc       {{ .Name }}
+	svc       {{ $svcName }}
 	subs      []*nats.Subscription
 }
 
-// New{{ $encSub }} creates a {{ $encSub | unexported }} that implements the QueueSubscriber.
-func New{{ $encSub }}(enc *nats.EncodedConn, queueName string, svc {{ .Name }}) pn.QueueSubscriber {
-	return &{{ $encSub | unexported }}{enc, queueName, svc, []*nats.Subscription{}}
+// New{{ $sub }} creates a {{ $subStruct }} that implements the QueueSubscriber.
+func New{{ $sub }}(enc *nats.EncodedConn, queueName string, svc {{ $svcName }}) pn.QueueSubscriber {
+	return &{{ $subStruct }}{enc, queueName, svc, []*nats.Subscription{}}
 }
 
 // Subscribe will register the services in encoded queue broker.
-func (s *{{ $encSub | unexported }}) Subscribe() error {
-{{ range .Method }}	if err := s.register(s.enc.QueueSubscribe({{ $svc }}{{ .Name }}Subject, s.queueName, s.{{ .Name | lower }})); err != nil {
+func (s *{{ $subStruct }}) Subscribe() error {
+{{ range .Method }}	if err := s.register(s.enc.QueueSubscribe({{ $svcName }}{{ .Name }}Subject, s.queueName, s.{{ .Name | lower }})); err != nil {
 		return err
 	}
 
@@ -56,7 +67,7 @@ func (s *{{ $encSub | unexported }}) Subscribe() error {
 }
 
 // Unsubscribe will unregister the services from the encoded queue broker.
-func (s *{{ $encSub | unexported }}) Unsubscribe() error {
+func (s *{{ $subStruct }}) Unsubscribe() error {
 	if len(s.subs) == 0 {
 		return nil
 	}
@@ -70,7 +81,7 @@ func (s *{{ $encSub | unexported }}) Unsubscribe() error {
 	return nil
 }
 
-func (s *{{ $encSub | unexported }}) register(sub *nats.Subscription, err error) error {
+func (s *{{ $subStruct }}) register(sub *nats.Subscription, err error) error {
 	if err != nil {
 		return err
 	}
@@ -79,6 +90,11 @@ func (s *{{ $encSub | unexported }}) register(sub *nats.Subscription, err error)
 
 	return nil
 }
+{{- end}}
+
+{{ range .Services }}{{ $svc := .Name | deref }}{{ $rep := $svc | len | add 10 | int }}
+// {{ repeat $rep "=" }}{{ $encSub := printf "%s%s" $svc "EncodedSubscriber" }}
+
 {{ range .Method }}
 func (s *{{ $encSub | unexported }}) {{ .Name | lower }}(subject, reply string, req *{{ .InputType | splitList "." | last }}) {
 	res, err := s.svc.{{ .Name }}(context.Background(), req)

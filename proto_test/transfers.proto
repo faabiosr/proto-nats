@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "protocol";
+
+//import "nats.proto";
+
+service Transfer {
+  rpc Verify(TransferRequest) returns (TransferResponse);
+  rpc Execute(TransferRequest) returns (TransferResponse);
+}
+
+//service Transfer {
+////  option (proto_nats.subject_prefix) = "tc";
+//
+//  rpc Verify(TransferRequest) returns (TransferResponse) {
+////		option (proto_nats.subject) = "vfy";
+//  }
+//
+//  rpc Execute(TransferRequest) returns (TransferResponse);
+//}
+
+message TransferRequest {
+  string gateway_id = 1;
+}
+
+message TransferResponse {
+  string gateway_id = 1;
+}
