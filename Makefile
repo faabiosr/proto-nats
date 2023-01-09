@@ -1,32 +1,43 @@
 .DEFAULT_GOAL := test
 
-# Build (dev only)
+# Build builds the app (only for testing purpose)
 build:
-	@CGO_ENABLE=0 go build -o ./build/protoc-gen-nats cmd/protoc-gen-nats/*.go
+	@go build -v -o ./build/protoc-gen-nats ./cmd/protoc-gen-nats
 .PHONY: build
 
 # Clean up
 clean:
-	@rm -fR ./cover.* ./build
+	@rm -fR ./cover.* ./build/ ./dist/
 .PHONY: clean
+
+# Creates folders and download dependencies
+configure:
+	@mkdir -p ./build
+	@go mod download
+.PHONY: configure
 
 # Run tests and generates html coverage file
 cover: test
-	@go tool cover -html=./coverage.text -o ./cover.html
-	@test -f ./coverage.text && rm ./coverage.text;
+	@go tool cover -html=./cover.out -o ./cover.html
+	@rm ./cover.out
 .PHONY: cover
 
-# Format all go files
-fmt:
-	@gofmt -s -w -l $(shell go list -f {{.Dir}} ./...)
-.PHONY: fmt
+# GolangCI Linter
+lint:
+	@golangci-lint run -v ./...
+.PHONY: lint
 
 # Run pkger and embed the asserts
 pack:
 	@pkger -o cmd/protoc-gen-nats
 .PHONY: pack
 
+# Release runs the goreleaser and creates the release for local testing.
+release:
+	@goreleaser release --snapshot
+.PHONY: release
+
 # Run tests
 test:
-	@go test -v -race -coverprofile=./coverage.text -covermode=atomic $(shell go list ./...)
+	@go test -v -covermode=atomic -coverprofile=cover.out ./...
 .PHONY: test

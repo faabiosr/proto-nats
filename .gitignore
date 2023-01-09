@@ -1,3 +1,5 @@
 cover*
 pkged.go
 build
+vendor
+dist/
