@@ -4,8 +4,10 @@ project_name: "protoc-gen-nats"
 before:
   hooks:
     - go mod tidy
+    - make clean
 builds:
-  - main: ./cmd/protoc-gen-nats/
+  - id: "proto-gen-nats"
+    main: ./cmd/protoc-gen-nats/
     binary: "protoc-gen-nats"
     env:
       - CGO_ENABLED=0
@@ -15,12 +17,22 @@ builds:
     goarch:
       - amd64
     ldflags:
-      - -X main.version={{ .Version }} -extldflags "-static" -w -s
+      - '-s'
+      - '-w'
+      - '-X main.version={{ .Version }}'
+      - '-extldflags "-static"'
 archives:
-  - name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
-    replacements:
-      darwin: osx
-      amd64: x86_64
+  - id: "proto-gen-nats"
+    builds:
+      - "proto-gen-nats"
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "darwin" }}osx
+      {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
         format: zip
@@ -32,3 +44,5 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
